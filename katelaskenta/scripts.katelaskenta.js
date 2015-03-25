@@ -37,6 +37,7 @@ $(document).ready(function () {
     // Toteutukset löytyvät alapuolelta.
     var alustaMuuttujat;
     var onkoVirheellinenMyyntikate;
+    var onkoTyhja;
     var lisaaHintaanKate;
     var asetaUusiHinta;
     
@@ -74,13 +75,20 @@ $(document).ready(function () {
      * Palauttaa false, jos virhe löytyy.
      */
     var onkoVirheellinenMyyntikate = function(myyntikate) {
-        if(myyntikate === "")
-            return false;
         if (isNaN(myyntikate)) 
             return false;
         if (myyntikate >= 100 || myyntikate < 0) 
             return false;
         return true;
+    };
+    
+    /**
+     * Funktio tarkistaa onko annettu arvo tyhja.
+     */
+    var onkoTyhja = function(myyntikate) {
+        if(myyntikate === "")
+            return true;
+        return false;
     };
     
     /**
@@ -95,13 +103,17 @@ $(document).ready(function () {
         var floatKeskihankintaHinta = parseFloat(keskihankintahinta);
         var floatMyyntikate = parseFloat(myyntikate);
         
+        if (onkoTyhja(floatMyyntikate)) {
+            alert("Katekenttä ei voi olla tyhjä.");
+            return false;
+        }
         if (isNaN(floatKeskihankintaHinta)) {
             alert("Virheellinen keskihankintahinta.");
             return false;
         }
         
         if(!onkoVirheellinenMyyntikate(floatMyyntikate)) {
-            alert("Virheellinen kate. Katekenttä ei voi olla tyhjä ja katteen pitää olla 0-100 välillä.");
+            alert("Virheellinen kate. Katteen pitää olla 0-100 välillä.");
             return false;
         }
 
@@ -192,17 +204,25 @@ $(document).ready(function () {
         var myymalakate = tuoterivitTaulukko.find("tfoot tr").find(footerKateMyymalahintaSarake).val();
         var nettokate = tuoterivitTaulukko.find("tfoot tr").find(footerKateNettohintaSarake).val();
         
-        if(!onkoVirheellinenMyyntikate(myyntikate)) {
-            alert("Virheellinen kate. Katekenttä ei voi olla tyhjä ja katteen pitää olla 0-100 välillä.");
-            return true;
+        if (!onkoTyhja(myyntikate)) {
+            if(!onkoVirheellinenMyyntikate(myyntikate)) {
+                alert("Virheellinen kate. Myyntikatekenttä ei voi olla tyhjä ja katteen pitää olla 0-100 välillä.");
+                return true;
+            }    
         }
-        if(!onkoVirheellinenMyyntikate(myymalakate)) {
-            alert("Virheellinen kate. Katekenttä ei voi olla tyhjä ja katteen pitää olla 0-100 välillä.");
-            return true;
+        
+        if (!onkoTyhja(myymalakate)) {
+            if(!onkoVirheellinenMyyntikate(myymalakate)) {
+                alert("Virheellinen kate. Myymalaatekenttä ei voi olla tyhjä ja katteen pitää olla 0-100 välillä.");
+                return true;
+            }
         }
-        if(!onkoVirheellinenMyyntikate(nettokate)) {
-            alert("Virheellinen kate. Katekenttä ei voi olla tyhjä ja katteen pitää olla 0-100 välillä.");
-            return true;
+
+        if (!onkoTyhja(nettokate)) {
+            if(!onkoVirheellinenMyyntikate(nettokate)) {
+                alert("Virheellinen kate. Nettokatekenttä ei voi olla tyhjä ja katteen pitää olla 0-100 välillä.");
+                return true;
+            }
         }
         
         // Käydään jokainen rivi läpi ja asetetaan uusi hinta, jos hinta
@@ -211,32 +231,34 @@ $(document).ready(function () {
             var valintaElementti = $(this).find(tuoteriviCheckboxSarake);
 
             if (valintaElementti.attr("checked") === "checked") {
-                var myyntihintaElementti = $(this).find(myyntihintaSarake);
-                var myymalahintaElementti = $(this).find(myymalahintaSarake);
-                var nettohintaElementti = $(this).find(nettohintaSarake);
                 var keskihankintahinta = $(this).data("kehahinta");
-                
-                var uusiMyyntihinta = lisaaHintaanKate(keskihankintahinta, myyntikate);
-                var uusiMyymalahinta = lisaaHintaanKate(keskihankintahinta, myymalakate);
-                var uusiNettohinta = lisaaHintaanKate(keskihankintahinta, nettokate);
-               
-                if(uusiMyyntihinta !== false && myyntikate > 0) {
-                    asetaUusiHinta(uusiMyyntihinta, myyntihintaElementti);
-                }
-                
-                if(uusiMyymalahinta !== false && myymalakate > 0) {
-                    asetaUusiHinta(uusiMyymalahinta, myymalahintaElementti);
-                }
-                
-                if(uusiNettohinta !== false && nettokate > 0) {
-                    asetaUusiHinta(uusiNettohinta, nettohintaElementti);
-                }
-                
-                $(this).find(kateMyyntihintaSarake).val(myyntikate);
-                $(this).find(kateMyymalahintaSarake).val(myymalakate);
-                $(this).find(kateNettohintaSarake).val(nettokate);
 
-
+                if (!onkoTyhja(myyntikate)) {
+                    var myyntihintaElementti = $(this).find(myyntihintaSarake);
+                    var uusiMyyntihinta = lisaaHintaanKate(keskihankintahinta, myyntikate);
+                    if(uusiMyyntihinta !== false && myyntikate > 0) {
+                        asetaUusiHinta(uusiMyyntihinta, myyntihintaElementti);
+                    }
+                    $(this).find(kateMyyntihintaSarake).val(myyntikate);
+                }
+                
+                if (!onkoTyhja(myymalakate)) {
+                    var myymalahintaElementti = $(this).find(myymalahintaSarake);
+                    var uusiMyymalahinta = lisaaHintaanKate(keskihankintahinta, myymalakate);
+                    if(uusiMyymalahinta !== false && myymalakate > 0) {
+                        asetaUusiHinta(uusiMyymalahinta, myymalahintaElementti);
+                    }
+                    $(this).find(kateMyymalahintaSarake).val(myymalakate);
+                }
+                
+                if (!onkoTyhja(nettokate)) {
+                    var nettohintaElementti = $(this).find(nettohintaSarake);
+                    var uusiNettohinta = lisaaHintaanKate(keskihankintahinta, nettokate);
+                    if(uusiNettohinta !== false && nettokate > 0) {
+                        asetaUusiHinta(uusiNettohinta, nettohintaElementti);
+                    }
+                    $(this).find(kateNettohintaSarake).val(nettokate);
+                }
             }
         });
     });
